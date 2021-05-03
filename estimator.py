@@ -19,14 +19,14 @@ class Estimator:
         self.output_size = 24
         if resnet == True:
             if load_old == True:
-                self.model = load_model("dse_model")
+                self.model = load_model("dse_model_resnet")
                 print("Loaded saved model")
             else:
                 self.model = build_model_resnet(self.stack_depth, self.img_height, self.img_width, self.output_size)
                 print("ResNet model")
         else:
             if load_old == True:
-                self.model = load_model("dse_model")
+                self.model = load_model("dse_model_plain")
                 print("Loaded saved model")
             else:
                 self.model = build_model(self.stack_depth, self.img_height, self.img_width, self.output_size)
@@ -71,7 +71,7 @@ class Estimator:
         print("Training")
         self.model.fit(input, output, epochs = 30, batch_size = 8)
         print("Saving model")
-        name = ("dse_model" if self.resnet else "dse_model_resnet")
+        name = ("dse_model_plain" if self.resnet else "dse_model_resnet")
         self.model.save(name)
 
     def eval(self, input, output):
