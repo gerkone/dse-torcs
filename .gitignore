@@ -1,4 +1,3 @@
 dataset/
-dse_model/
-dse_model_resnet/
+testset/
 __pycache__

@@ -40,7 +40,7 @@ def build_model(stack_depth, img_height, img_width, output_size):
     model.add(Dense(96, activation="relu"))
     model.add(Dense(48, activation="relu"))
     model.add(Dense(48, activation="relu"))
-    model.add(Dense(output_size, activation="softmax"))
+    model.add(Dense(output_size, activation="linear"))
 
     adam = Adam(learning_rate=1e-5)
 
@@ -53,9 +53,11 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
         strides = 1
         if downsample:
             strides = 2
-        y = Conv2D(n_filters, kernel_size = kernel_size, strides = strides, padding="same", activation = "relu")(X)
+        y = Conv2D(n_filters, kernel_size = kernel_size, strides = strides, padding="same", activation = "relu",
+                kernel_initializer="he_normal", bias_initializer="zeros")(X)
         y = BatchNormalization()(y)
-        y = Conv2D(n_filters, kernel_size = kernel_size, strides = 1, padding="same", activation = "relu")(y)
+        y = Conv2D(n_filters, kernel_size = kernel_size, strides = 1, padding="same", activation = "relu",
+                kernel_initializer="he_normal", bias_initializer="zeros")(y)
         y = BatchNormalization()(y)
         if downsample:
             X = Conv2D(n_filters, kernel_size = 1, strides = 2, padding="same", activation = "relu")(X)
@@ -69,10 +71,11 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
 
     n_filters = 16
 
-    t = Conv2D(n_filters, kernel_size = 3, strides = 1, padding="same", activation = "relu")(input)
+    t = Conv2D(n_filters, kernel_size = 3, strides = 1, padding="same", activation = "relu",
+            kernel_initializer="he_normal", bias_initializer="zeros")(input)
     t = BatchNormalization()(t)
 
-    residual_blocks = [2, 5, 3]
+    residual_blocks = [2, 5, 3, 2]
 
     for i in range(len(residual_blocks)):
         num_blocks = residual_blocks[i]
@@ -88,7 +91,7 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
     fcl = Dense(96, activation="relu")
     fcl = Dense(96, activation="relu")
 
-    output = Dense(output_size, activation='softmax')(t)
+    output = Dense(output_size, activation="linear")(t)
 
     model = Model(input, output)
 
@@ -99,7 +102,7 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
     return model
 
 def limit_memory():
-    physical_devices = tf.config.list_physical_devices('GPU')
+    physical_devices = tf.config.list_physical_devices("GPU")
     tf.config.experimental.set_memory_growth(physical_devices[0], False)
 
 
