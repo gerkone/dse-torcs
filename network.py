@@ -97,7 +97,7 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
 
     adam = Adam(learning_rate=1e-5)
 
-    model.compile(loss="mean_squared_error", optimizer=adam, metrics=["accuracy"])
+    model.compile(loss="mean_squared_error", optimizer=adam)
 
     return model
 

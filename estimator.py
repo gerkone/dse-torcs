@@ -137,7 +137,7 @@ class Estimator:
 
 
     def train(self, input, output):
-        self.model.fit(input, output, epochs = self.epochs, batch_size = self.batch)
+        self.model.fit(input, output, epochs = self.epochs, batch_size = self.batch, verbose = 2)
         print("Saving model")
         name = ("dse_model_resnet" if self.resnet else "dse_model_plain")
         self.model.save(name)
