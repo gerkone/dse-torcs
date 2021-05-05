@@ -101,6 +101,9 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
 
     return model
 
+def get_callback():
+    return tf.keras.callbacks.TensorBoard(log_dir="logs", update_freq="epoch", write_graph=True, profile_batch=0)
+
 def limit_memory():
     physical_devices = tf.config.list_physical_devices("GPU")
     tf.config.experimental.set_memory_growth(physical_devices[0], False)

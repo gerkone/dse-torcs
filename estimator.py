@@ -6,7 +6,7 @@ import h5py
 
 class Estimator:
     def __init__(self, dataset_dir, testset_dir, load_old, resnet, track, batch, epochs, stack_depth):
-        from network import build_model, build_model_resnet, load_model, limit_memory
+        from network import build_model, build_model_resnet, load_model, limit_memory, get_callback
         # limit_memory()
 
         self.dataset_files = []
@@ -27,6 +27,8 @@ class Estimator:
         self.img_height = 240
         self.img_width = 320
         self.output_size = 21
+
+        self.tbCallBack = get_callback()
 
         self.batch = batch
 
@@ -137,7 +139,7 @@ class Estimator:
 
 
     def train(self, input, output):
-        self.model.fit(input, output, epochs = self.epochs, batch_size = self.batch, verbose = 2)
+        self.model.fit(input, output, epochs = self.epochs, batch_size = self.batch, verbose = 2, callbacks=[self.tbCallBack])
         print("Saving model")
         name = ("dse_model_resnet" if self.resnet else "dse_model_plain")
         self.model.save(name)
