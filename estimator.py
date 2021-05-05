@@ -5,7 +5,7 @@ import cv2
 import h5py
 
 class Estimator:
-    def __init__(self, dataset_dir, testset_dir, load_old, resnet, track):
+    def __init__(self, dataset_dir, testset_dir, load_old, resnet, track, batch, epochs, stack_depth):
         from network import build_model, build_model_resnet, load_model, limit_memory
         # limit_memory()
 
@@ -23,10 +23,14 @@ class Estimator:
                     self.evaluation_files.append(os.path.join(testset_dir, file))
 
         self.resnet = resnet
-        self.stack_depth = 3
+        self.stack_depth = stack_depth
         self.img_height = 240
         self.img_width = 320
         self.output_size = 21
+
+        self.batch = batch
+
+        self.epochs = epochs
 
         if resnet == True:
             if load_old == True:
@@ -133,7 +137,7 @@ class Estimator:
 
 
     def train(self, input, output):
-        self.model.fit(input, output, epochs = 15, batch_size = 8)
+        self.model.fit(input, output, epochs = self.epochs, batch_size = self.batch)
         print("Saving model")
         name = ("dse_model_resnet" if self.resnet else "dse_model_plain")
         self.model.save(name)
@@ -144,6 +148,9 @@ if __name__ == "__main__":
     parser.add_argument("--testset-dir", dest = "testset_dir", help="path to the testset directory", default="testset/", type=str)
     parser.add_argument("--load", dest = "load_old", help="set to load saved model", default="False", action="store_true")
     parser.add_argument("--resnet", dest = "resnet", help="set use resnet model", default="False", action="store_true")
+    parser.add_argument("--batch", dest = "batch", help="batch size", type = int, default = 8)
+    parser.add_argument("--epochs", dest = "epochs", help="n of epochs", type = int, default = 12)
+    parser.add_argument("--stack-depth", dest = "stack_depth", help="frame stack depth", type = int, default = 3)
     # parser.add_argument("--no-eval", dest = "no_eval", help="do not perform tests", default="False", action="store_true")
     # parser.add_argument("--no-train", dest = "no_train", help="do not perform training", default="False", action="store_true")
     parser.add_argument("--track", dest = "track", help="train only on data from track (no '-' in name)", default="", type=str)
@@ -152,7 +159,7 @@ if __name__ == "__main__":
 
     dataset_files = []
 
-    est = Estimator(args.dataset_dir, args.testset_dir, args.load_old, args.resnet, args.track)
+    est = Estimator(args.dataset_dir, args.testset_dir, args.load_old, args.resnet, args.track, args.batch, args.epochs, args.stack_depth)
 
     print("training")
     est.run()
