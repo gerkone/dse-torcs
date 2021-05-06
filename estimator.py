@@ -50,7 +50,7 @@ class Estimator:
                 print("Standard model")
 
     def run(self):
-        for i, ep_file in zip(range(len(self.dataset_files) - 1), self.dataset_files):
+        for i, ep_file in zip(range(len(self.dataset_files) - 1), self.dataset_files[5:]):
             print("loading episode data: {} - {}/{}".format(ep_file, i + 1, len(self.dataset_files)))
 
             dataset = h5py.File(ep_file, "r")
@@ -139,7 +139,7 @@ class Estimator:
 
 
     def train(self, input, output):
-        self.model.fit(input, output, epochs = self.epochs, batch_size = self.batch, verbose = 2, callbacks=[self.tbCallBack])
+        self.model.fit(input, output, epochs = self.epochs, batch_size = self.batch, verbose = 1)
         print("Saving model")
         name = ("dse_model_resnet" if self.resnet else "dse_model_plain")
         self.model.save(name)
