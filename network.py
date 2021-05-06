@@ -75,7 +75,7 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
             kernel_initializer="he_normal", bias_initializer="zeros")(input)
     t = BatchNormalization()(t)
 
-    residual_blocks = [2, 5, 3, 2]
+    residual_blocks = [2, 3, 6, 4, 2]
 
     for i in range(len(residual_blocks)):
         num_blocks = residual_blocks[i]
@@ -88,10 +88,12 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
     t = Flatten()(t)
 
     fcl = Dense(192, activation="relu")
+    fcl = Dense(128, activation="relu")
     fcl = Dense(96, activation="relu")
     fcl = Dense(96, activation="relu")
 
-    output = Dense(output_size, activation="linear")(t)
+    # output = Dense(output_size, activation="linear")(t)
+    output = Dense(output_size, activation="sigmoid")(t)
 
     model = Model(input, output)
 

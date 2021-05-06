@@ -1,3 +1,4 @@
 dataset/
 testset/
 __pycache__
+nohup.out
