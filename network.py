@@ -7,44 +7,47 @@ from tensorflow.keras.models import Model
 def build_model(stack_depth, img_height, img_width, output_size):
     model = Sequential()
 
-    model.add(Conv2D(8, (4, 4), input_shape = (img_height, img_width, stack_depth), padding="valid", activation = "relu"))
+    model.add(Conv2D(8, (4, 4), input_shape = (img_height, img_width, stack_depth), padding="same", activation = "relu"))
     model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    # model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(8, (4, 4), padding="same", strides = 2, activation = "relu"))
 
-    model.add(Conv2D(8, (4, 4), input_shape = (img_height, img_width, stack_depth), padding="valid", activation = "relu"))
+    model.add(Conv2D(8, (4, 4), padding="same", activation = "relu"))
     model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
-    model.add(Conv2D(16, (3, 3), padding="same", activation = "relu"))
-    model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    # model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(8, (4, 4), padding="same", strides = 2, activation = "relu"))
 
     model.add(Conv2D(16, (3, 3), padding="same", activation = "relu"))
     model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    # model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(16, (3, 3), padding="same", strides = 2, activation = "relu"))
 
-    model.add(Conv2D(32, (2, 2), padding="same", activation = "relu"))
+    model.add(Conv2D(16, (3, 3), padding="same", activation = "relu"))
     model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    # model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(16, (3, 3), padding="same", strides = 2, activation = "relu"))
 
-    model.add(Conv2D(32, (2, 2), padding="same", activation = "relu"))
+    model.add(Conv2D(32, (3, 3), padding="same", activation = "relu"))
     model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    # model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(32, (3, 3), padding="same", strides = 2, activation = "relu"))
+
+    model.add(Conv2D(32, (3, 3), padding="same", activation = "relu"))
+    model.add(BatchNormalization())
+    # model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(32, (3, 3), padding="same", strides = 2, activation = "relu"))
 
     model.add(Activation("relu"))
 
     model.add(Flatten())
 
-    model.add(Dense(192, activation="relu"))
     model.add(Dense(96, activation="relu"))
-    model.add(Dense(96, activation="relu"))
-    model.add(Dense(48, activation="relu"))
     model.add(Dense(48, activation="relu"))
     model.add(Dense(output_size, activation="linear"))
 
     adam = Adam(learning_rate=1e-5)
 
-    model.compile(loss="mean_squared_error", optimizer=adam, metrics=["accuracy"])
+    model.compile(loss="mean_squared_error", optimizer=adam)
 
     return model
 
@@ -87,17 +90,15 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
     t = AveragePooling2D(4)(t)
     t = Flatten()(t)
 
-    fcl = Dense(192, activation="relu")
-    fcl = Dense(128, activation="relu")
-    fcl = Dense(96, activation="relu")
-    fcl = Dense(96, activation="relu")
+    fcl = Dense(192, activation="relu")(t)
+    fcl = Dense(96, activation="relu")(fcl)
 
     # output = Dense(output_size, activation="linear")(t)
-    output = Dense(output_size, activation="sigmoid")(t)
+    output = Dense(output_size, activation="linear")(fcl)
 
     model = Model(input, output)
 
-    adam = Adam(learning_rate=1e-5)
+    adam = Adam(learning_rate = 1e-5)
 
     model.compile(loss="mean_squared_error", optimizer=adam)
 
