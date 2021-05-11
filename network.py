@@ -41,6 +41,7 @@ def build_model(stack_depth, img_height, img_width, output_size):
 
     model.add(Flatten())
 
+    model.add(Dense(192, activation="relu"))
     model.add(Dense(96, activation="relu"))
     model.add(Dense(48, activation="relu"))
     model.add(Dense(output_size, activation="linear"))
@@ -72,13 +73,13 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
     input = Input(shape = (img_height, img_width, stack_depth))
     # input = BatchNormalization()(input)
 
-    n_filters = 16
+    n_filters = 8
 
     t = Conv2D(n_filters, kernel_size = 3, strides = 1, padding="same", activation = "relu",
             kernel_initializer="he_normal", bias_initializer="zeros")(input)
     t = BatchNormalization()(t)
 
-    residual_blocks = [2, 3, 6, 4, 2]
+    residual_blocks = [2, 3, 4, 2]
 
     for i in range(len(residual_blocks)):
         num_blocks = residual_blocks[i]
@@ -92,8 +93,8 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
 
     fcl = Dense(192, activation="relu")(t)
     fcl = Dense(96, activation="relu")(fcl)
+    fcl = Dense(48, activation="relu")(fcl)
 
-    # output = Dense(output_size, activation="linear")(t)
     output = Dense(output_size, activation="linear")(fcl)
 
     model = Model(input, output)

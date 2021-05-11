@@ -142,6 +142,8 @@ class Estimator:
                 mean_evs += explained_variance_score(sensors[i], pred)
                 # TODO PCA
 
+            self.model.evaluate(frames, sensors, batch_size = self.batch, verbose = 2)
+
             r2 = mean_r2 / (sensors.shape[0])
             evs = mean_evs / (sensors.shape[0])
             print("R2: {:.4f} - explained variance score: {:.4f} ".format(r2, evs))
@@ -167,17 +169,18 @@ if __name__ == "__main__":
     parser.add_argument("--batch", dest = "batch", help="batch size", type = int, default = 32)
     parser.add_argument("--epochs", dest = "epochs", help="n of epochs", type = int, default = 20)
     parser.add_argument("--stack-depth", dest = "stack_depth", help="frame stack depth", type = int, default = 3)
-    # parser.add_argument("--no-eval", dest = "no_eval", help="do not perform tests", default="False", action="store_true")
+    parser.add_argument("--eval", dest = "eval", help="evaluation only", default="False", action="store_true")
     # parser.add_argument("--no-train", dest = "no_train", help="do not perform training", default="False", action="store_true")
-    parser.add_argument("--track", dest = "track", help="train only on data from track (no '-' in name)", default="", type=str)
+    parser.add_argument("--track", dest = "track", help="train only on data from track (do not use '-' in name)", default="", type=str)
 
     args = parser.parse_args()
 
     dataset_files = []
 
     est = Estimator(args.dataset_dir, args.testset_dir, args.load_old, args.resnet, args.track, args.batch, args.epochs, args.stack_depth)
-    #
-    print("training")
-    est.run()
+
+    if not args.eval == True:
+        print("training")
+        est.run()
     print("evaluating network")
     est.evaluate()

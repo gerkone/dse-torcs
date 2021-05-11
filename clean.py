@@ -35,9 +35,9 @@ if __name__ == "__main__":
     dataset_dir = "dataset"
     testset_dir = "testset"
 
-    for file in os.listdir(dataset_dir):
-        if ".h5" in file:
-            files.append(os.path.join(dataset_dir, file))
+    # for file in os.listdir(dataset_dir):
+    #     if ".h5" in file:
+    #         files.append(os.path.join(dataset_dir, file))
     for file in os.listdir(testset_dir):
         if ".h5" in file:
             files.append(os.path.join(testset_dir, file))
