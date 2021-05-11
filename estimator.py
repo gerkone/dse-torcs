@@ -92,7 +92,6 @@ class Estimator:
 
     def evaluate(self):
         from sklearn.decomposition import PCA
-        import matplotlib.pyplot as plt
         from sklearn.metrics import explained_variance_score, r2_score
         for i, ep_file in zip(range(len(self.evaluation_files)), self.evaluation_files):
             print("loading episode data: {} - {}/{}".format(ep_file, i + 1, len(self.evaluation_files)))
@@ -177,7 +176,7 @@ if __name__ == "__main__":
 
     est = Estimator(args.dataset_dir, args.testset_dir, args.load_old, args.resnet, args.track, args.batch, args.epochs, args.stack_depth)
     #
-    print("training")
-    est.run()
+   # print("training")
+   # est.run()
     print("evaluating network")
     est.evaluate()
