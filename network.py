@@ -4,10 +4,12 @@ from keras.layers import Dense, Conv2D, MaxPooling2D, Input, Activation, Flatten
 import tensorflow as tf
 from tensorflow.keras.models import Model
 
-def build_model(stack_depth, img_height, img_width, output_size):
+def build_model(img_height, img_width, output_size, rgb):
+
+    ch = (3 if rgb == True else 1)
     model = Sequential()
 
-    model.add(Conv2D(8, (4, 4), input_shape = (img_height, img_width, stack_depth), padding="same", activation = "relu"))
+    model.add(Conv2D(8, (4, 4), input_shape = (img_height, img_width, ch), padding="same", activation = "relu"))
     model.add(BatchNormalization())
     # model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Conv2D(8, (4, 4), padding="same", strides = 2, activation = "relu"))
@@ -52,7 +54,7 @@ def build_model(stack_depth, img_height, img_width, output_size):
 
     return model
 
-def build_model_resnet(stack_depth, img_height, img_width, output_size):
+def build_model_resnet(img_height, img_width, output_size, rgb):
     def residual_block(X, downsample, kernel_size, n_filters):
         strides = 1
         if downsample:
@@ -70,7 +72,9 @@ def build_model_resnet(stack_depth, img_height, img_width, output_size):
 
         return out
 
-    input = Input(shape = (img_height, img_width, stack_depth))
+    ch = (3 if rgb == True else 1)
+    
+    input = Input(shape = (img_height, img_width, ch))
     # input = BatchNormalization()(input)
 
     n_filters = 8

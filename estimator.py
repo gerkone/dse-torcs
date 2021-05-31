@@ -5,7 +5,7 @@ import cv2
 import h5py
 
 class Estimator:
-    def __init__(self, dataset_dir, testset_dir, load_old, resnet, track, batch, epochs, stack_depth):
+    def __init__(self, dataset_dir, testset_dir, load_old, resnet, track, batch, epochs, rgb):
         from network import build_model, build_model_resnet, load_model, limit_memory, get_callback
         # limit_memory()
 
@@ -23,10 +23,11 @@ class Estimator:
                     self.evaluation_files.append(os.path.join(testset_dir, file))
 
         self.resnet = resnet
-        self.stack_depth = stack_depth
         self.img_height = 120
         self.img_width = 160
         self.output_size = 21
+
+        self.rgb = rgb
 
         self.tbCallBack = get_callback()
 
@@ -39,56 +40,59 @@ class Estimator:
                 self.model = load_model("dse_model_resnet")
                 print("Loaded saved model")
             else:
-                self.model = build_model_resnet(self.stack_depth, self.img_height, self.img_width, self.output_size)
+                self.model = build_model_resnet(self.img_height, self.img_width, self.output_size, self.rgb)
                 print("ResNet model")
         else:
             if load_old == True:
                 self.model = load_model("dse_model_plain")
                 print("Loaded saved model")
             else:
-                self.model = build_model(self.stack_depth, self.img_height, self.img_width, self.output_size)
+                self.model = build_model(self.img_height, self.img_width, self.output_size, self.rgb)
                 print("Standard model")
         self.model.summary()
+
+    def _prepare_data(self, filename):
+        dataset = h5py.File(filename, "r")
+        images = np.array(dataset.get("img"))
+        sensors = np.array(dataset.get("sensors"))
+
+        # skip some steps ( shared mmeory bug )
+        images = images[4:]
+        sensors = sensors[4:]
+
+        l = min(images.shape[0], sensors.shape[0])
+
+        crop_in = np.abs(images.shape[0] - l)
+        if crop_in > 0:
+            images = images[:-crop_in]
+
+        crop_out = np.abs(sensors.shape[0] - l)
+        if crop_out > 0:
+            sensors = sensors[:-crop_out]
+
+        ch = (3 if self.rgb == True else 1)
+        images = images.reshape((images.shape[0], self.img_height, self.img_width, ch)).astype(np.uint8)
+
+        for i in range(images.shape[0]):
+            if self.rgb == False:
+                images[i] = cv2.cvtColor(images[i], cv2.COLOR_BGR2GRAY)
+
+        dataset.close()
+
+        return images, sensors
+
 
     def run(self):
         for i, ep_file in zip(range(len(self.dataset_files)), self.dataset_files):
             print("loading episode data: {} - {}/{}".format(ep_file, i + 1, len(self.dataset_files)))
 
-            dataset = h5py.File(ep_file, "r")
-            images = np.array(dataset.get("img"))
-            sensors = np.array(dataset.get("sensors"))
+            # normalize array length and convert to grayscale
+            images, sensors = self._prepare_data(ep_file)
 
-            # skip some steps ( shared mmeory bug )
-            images = images[4:]
-            sensors = sensors[4:]
-
-            l = min(images.shape[0], sensors.shape[0])
-            crop_in = np.abs(images.shape[0] - l)
-            if crop_in > 0:
-                images = images[:-crop_in]
-
-            crop_out = np.abs(sensors.shape[0] - l)
-            if crop_out > 0:
-                sensors = sensors[:-crop_out]
-
-            frames = np.empty(shape = (images.shape[0], self.img_height, self.img_width, self.stack_depth), dtype = np.uint8)
-            from PIL import Image
-            for i in range(images.shape[0] - self.stack_depth):
-                frames[i] = np.stack([cv2.cvtColor(step, cv2.COLOR_BGR2GRAY) for step in images[i:i + self.stack_depth]], axis = -1).astype(np.uint8)
-                # if i > 300:
-                #     print(sensors[i])
-                #     img = Image.fromarray(frames[i][..., 0])
-                #     img.show()
-                #     input()
-            # bad way
-            frames = frames[:-self.stack_depth]
-            sensors = sensors[:-self.stack_depth]
-            self.train(frames, sensors)
+            self.train(images, sensors)
 
             del images
             del sensors
-
-            dataset.close()
 
     def evaluate(self):
         from sklearn.decomposition import PCA
@@ -96,32 +100,9 @@ class Estimator:
         for i, ep_file in zip(range(len(self.evaluation_files)), self.evaluation_files):
             print("loading episode data: {} - {}/{}".format(ep_file, i + 1, len(self.evaluation_files)))
 
-            dataset = h5py.File(ep_file, "r")
-            images = np.array(dataset.get("img"))
-            sensors = np.array(dataset.get("sensors"))
+            # normalize array length and convert to grayscale
+            images, sensors = self._prepare_data(ep_file)
 
-            # skip some steps ( shared mmeory bug )
-            images = images[4:]
-            sensors = sensors[4:]
-
-            l = min(images.shape[0], sensors.shape[0])
-
-            crop_in = np.abs(images.shape[0] - l)
-            if crop_in > 0:
-                images = images[:-crop_in]
-
-            crop_out = np.abs(sensors.shape[0] - l)
-            if crop_out > 0:
-                sensors = sensors[:-crop_out]
-
-            frames = np.empty(shape = (images.shape[0], self.img_height, self.img_width, self.stack_depth), dtype = np.uint8)
-
-            for i in range(images.shape[0] - self.stack_depth):
-                frames[i] = np.stack([cv2.cvtColor(step, cv2.COLOR_BGR2GRAY) for step in images[i:i + self.stack_depth]], axis = -1).astype(np.uint8)
-
-            # bad way
-            frames = frames[:-self.stack_depth]
-            sensors = sensors[:-self.stack_depth]
             mean_r2 = 0
             mean_evs = 0
             from PIL import Image
@@ -131,7 +112,7 @@ class Estimator:
                 #     img.show()
                 #     print(sensors[i])
                 #     input()
-                frame_t = np.expand_dims(frames[i], axis = 0)
+                frame_t = np.expand_dims(images[i], axis = 0)
                 pred = self.model.predict(frame_t)[0]
                 # R2
                 correlation_matrix = np.corrcoef(sensors[i], pred)
@@ -141,7 +122,7 @@ class Estimator:
                 mean_evs += explained_variance_score(sensors[i], pred)
                 # TODO PCA
 
-            self.model.evaluate(frames, sensors, batch_size = self.batch, verbose = 2)
+            self.model.evaluate(images, sensors, batch_size = self.batch, verbose = 2)
 
             r2 = mean_r2 / (sensors.shape[0])
             evs = mean_evs / (sensors.shape[0])
@@ -167,16 +148,15 @@ if __name__ == "__main__":
     parser.add_argument("--resnet", dest = "resnet", help="set use resnet model", default="False", action="store_true")
     parser.add_argument("--batch", dest = "batch", help="batch size", type = int, default = 32)
     parser.add_argument("--epochs", dest = "epochs", help="n of epochs", type = int, default = 20)
-    parser.add_argument("--stack-depth", dest = "stack_depth", help="frame stack depth", type = int, default = 3)
     parser.add_argument("--eval", dest = "eval", help="evaluation only", default="False", action="store_true")
-    # parser.add_argument("--no-train", dest = "no_train", help="do not perform training", default="False", action="store_true")
+    parser.add_argument("--rgb", dest = "rgb", help="use rgb images (working with CNN only)", default="False", action="store_true")
     parser.add_argument("--track", dest = "track", help="train only on data from track (do not use '-' in name)", default="", type=str)
 
     args = parser.parse_args()
 
     dataset_files = []
 
-    est = Estimator(args.dataset_dir, args.testset_dir, args.load_old, args.resnet, args.track, args.batch, args.epochs, args.stack_depth)
+    est = Estimator(args.dataset_dir, args.testset_dir, args.load_old, args.resnet, args.track, args.batch, args.epochs, args.rgb)
 
     if not args.eval == True:
         print("training")
